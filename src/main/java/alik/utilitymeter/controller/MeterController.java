@@ -30,8 +30,8 @@ public class MeterController {
 
   @GetMapping
   public ResponseEntity<List<MeterResponse>> getMeters(@CurrentUser AuthenticatedUser user) {
-    log.debug("Fetching meters for user: {}", user.id());
-    return ResponseEntity.ok(meterService.getActiveMeters(user.id()));
+    log.debug("Fetching meters for user: {}, role: {}", user.id(), user.role());
+    return ResponseEntity.ok(meterService.getActiveMeters(user.id(), user.role()));
   }
 
   @PostMapping
@@ -45,8 +45,8 @@ public class MeterController {
   @DeleteMapping("/{id}")
   public ResponseEntity<Void> deleteMeter(@PathVariable("id") UUID id,
                                           @CurrentUser AuthenticatedUser user) {
-    log.debug("Deleting meter for user: {}", user.id());
-    meterService.deactivateMeter(id, user.id());
+    log.debug("Deleting meter for user: {}, role: {}", user.id(), user.role());
+    meterService.deactivateMeter(id, user.id(), user.role());
     return ResponseEntity.ok().build();
   }
 }

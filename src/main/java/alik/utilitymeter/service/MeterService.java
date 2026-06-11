@@ -4,6 +4,7 @@ import alik.utilitymeter.dto.request.MeterRegistrationRequest;
 import alik.utilitymeter.dto.response.MeterResponse;
 import alik.utilitymeter.entity.Meter;
 import alik.utilitymeter.entity.User;
+import alik.utilitymeter.enums.Role;
 import alik.utilitymeter.exception.BadRequestException;
 import alik.utilitymeter.exception.ConflictException;
 import alik.utilitymeter.mapper.MeterMapper;
@@ -44,21 +45,35 @@ public class MeterService {
   }
 
   @Transactional(readOnly = true)
-  public List<MeterResponse> getActiveMeters(UUID userId) {
-    log.info("Fetching meters for user: {}", userId);
-    return meterRepository.findByUserIdAndActiveTrue(userId).stream()
+  public List<MeterResponse> getActiveMeters(UUID userId, Role role) {
+    log.info("Fetching meters for user: {}, role: {}", userId, role);
+    List<Meter> meters = (role == Role.ADMIN)
+        ? meterRepository.findByActiveTrue()
+        : meterRepository.findByUserIdAndActiveTrue(userId);
+
+    return meters.stream()
         .map(meterMapper::toResponseDto)
         .toList();
   }
 
   @Transactional
-  public void deactivateMeter(UUID meterId, UUID userId) {
-    log.info("Deactivating meter: {} for user: {}", meterId, userId);
-    Meter meter = meterRepository.findByIdAndUserIdAndActiveTrue(meterId, userId)
-        .orElseThrow(() -> new BadRequestException("Active meter not found for this user"));
+  public void deactivateMeter(UUID meterId, UUID userId, Role role) {
+    log.info("Deactivating meter: {} for user: {}, role: {}", meterId, userId, role);
+    Meter meter = getMeterAndVerifyAccess(meterId, userId, role);
 
     meter.setActive(false);
     meterRepository.saveAndFlush(meter);
+  }
+
+  private Meter getMeterAndVerifyAccess(UUID meterId, UUID userId, Role role) {
+    Meter meter = meterRepository.findById(meterId)
+        .filter(Meter::isActive)
+        .orElseThrow(() -> new BadRequestException("Active meter not found for this user"));
+
+    if (role != Role.ADMIN && !meter.getUser().getId().equals(userId)) {
+      throw new BadRequestException("Active meter not found for this user");
+    }
+    return meter;
   }
 
 }
