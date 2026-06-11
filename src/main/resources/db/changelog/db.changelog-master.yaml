@@ -1,2 +1,7 @@
 databaseChangeLog:
-  -
+  - include:
+      file: db/changelog/migrations/001-create-users.yaml
+  - include:
+      file: db/changelog/migrations/002-create-meters.yaml
+  - include:
+      file: db/changelog/migrations/003-create-meter-readings.yaml

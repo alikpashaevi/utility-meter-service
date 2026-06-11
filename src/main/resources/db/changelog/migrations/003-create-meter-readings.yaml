@@ -1,0 +1,85 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-create-meter-readings
+      author: alikpashaevi
+      comment: "Meter readings table with fixed rollback structure"
+      changes:
+        - createTable:
+            tableName: meter_readings
+            columns:
+              - column:
+                  name: id
+                  type: uuid
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: meter_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_readings_meter_id
+                    referencedTableName: meters
+                    referencedColumnNames: id
+
+              - column:
+                  name: value
+                  type: decimal(12, 3)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: reading_year
+                  type: int
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: reading_month
+                  type: int
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: note
+                  type: varchar(500)
+
+              - column:
+                  name: submitted_by
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+
+              - column:
+                  name: created_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+                  defaultValueComputed: NOW()
+
+        - addUniqueConstraint:
+            constraintName: uq_readings_meter_year_month
+            tableName: meter_readings
+            columnNames: meter_id, reading_year, reading_month
+
+        - createIndex:
+            indexName: idx_readings_meter_id
+            tableName: meter_readings
+            columns:
+              - column:
+                  name: meter_id
+
+        # Clean YAML native check constraint for positive values
+        - sql:
+            sql: ALTER TABLE meter_readings ADD CONSTRAINT chk_reading_value_positive CHECK (value >= 0)
+            rollback: ALTER TABLE meter_readings DROP CONSTRAINT chk_reading_value_positive
+
+        # Clean YAML native check constraint for calendar limits
+        - sql:
+            sql: ALTER TABLE meter_readings ADD CONSTRAINT chk_reading_month_range CHECK (reading_month >= 1 AND reading_month <= 12)
+            rollback: ALTER TABLE meter_readings DROP CONSTRAINT chk_reading_month_range
+
+      # The global changeSet level rollback handles dropping the whole table
+      rollback:
+        - dropTable:
+            tableName: meter_readings
