@@ -36,6 +36,14 @@ public class GlobalExceptionHandler {
     return handleException(ex, request, HttpStatus.CONFLICT, ex.getMessage(), false);
   }
 
+  @ExceptionHandler(DataIntegrityViolationException.class)
+  public ResponseEntity<ExceptionResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex,
+                                                                        HttpServletRequest request) {
+    log.warn("Database integrity violation: {}", ex.getMessage());
+    String message = "Database integrity violation. Resource may already exist or constraint failed.";
+    return handleException(ex, request, HttpStatus.CONFLICT, message, false);
+  }
+
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<ExceptionResponse> handleValidation(MethodArgumentNotValidException e,
                                                             HttpServletRequest request) {
