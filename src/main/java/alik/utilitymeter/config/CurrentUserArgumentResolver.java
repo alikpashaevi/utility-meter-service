@@ -1,6 +1,6 @@
 package alik.utilitymeter.config;
 
-import alik.utilitymeter.dto.AuthenticatedUser;
+import alik.utilitymeter.dto.internal.AuthenticatedUser;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.MethodParameter;
 import org.springframework.stereotype.Component;

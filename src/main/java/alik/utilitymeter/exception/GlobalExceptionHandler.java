@@ -3,7 +3,6 @@ package alik.utilitymeter.exception;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.coyote.BadRequestException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -27,13 +26,13 @@ public class GlobalExceptionHandler {
     return handleException(ex, request, HttpStatus.UNAUTHORIZED, ex.getMessage(), false);
   }
 
-  @ExceptionHandler(BadRequestException.class)
+  @ExceptionHandler(alik.utilitymeter.exception.BadRequestException.class)
   public ResponseEntity<ExceptionResponse> handleBadRequest(BadRequestException ex, HttpServletRequest request) {
     return handleException(ex, request, HttpStatus.BAD_REQUEST, ex.getMessage(), false);
   }
 
-  @ExceptionHandler(DataIntegrityViolationException.class)
-  public ResponseEntity<ExceptionResponse> handleConflict(DataIntegrityViolationException ex, HttpServletRequest request) {
+  @ExceptionHandler(ConflictException.class)
+  public ResponseEntity<ExceptionResponse> handleConflict(ConflictException ex, HttpServletRequest request) {
     return handleException(ex, request, HttpStatus.CONFLICT, ex.getMessage(), false);
   }
 

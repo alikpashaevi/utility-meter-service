@@ -1,12 +1,10 @@
 package alik.utilitymeter.repository;
 
-import alik.utilitymeter.entity.User;
-import java.util.Optional;
+import alik.utilitymeter.entity.MeterReading;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface UserRepository extends JpaRepository<User, UUID> {
-  Optional<User> findByKeycloakSubject(String subject);
+public interface MeterReadingRepository extends JpaRepository<MeterReading, UUID> {
 }

@@ -1,6 +1,6 @@
 package alik.utilitymeter.security;
 
-import alik.utilitymeter.dto.AuthenticatedUser;
+import alik.utilitymeter.dto.internal.AuthenticatedUser;
 import alik.utilitymeter.entity.User;
 import alik.utilitymeter.service.UserSyncService;
 import com.nimbusds.jwt.JWTClaimsSet;
@@ -64,7 +64,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
       User user = userSyncService.syncUser(subject, email, name, roles);
 
       request.setAttribute("currentUser", new AuthenticatedUser(
-          user.getId().toString(), user.getEmail(), user.getRole()
+          user.getId(), user.getKeycloakSubject(), user.getEmail(), user.getRole()
       ));
 
       filterChain.doFilter(request, response);

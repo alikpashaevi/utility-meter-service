@@ -1,9 +1,11 @@
-package alik.utilitymeter.dto;
+package alik.utilitymeter.dto.internal;
 
 import alik.utilitymeter.enums.Role;
+import java.util.UUID;
 
 public record AuthenticatedUser(
-    String id,
+    UUID id,
+    String keycloakSubject,
     String email,
     Role role
 ) {
