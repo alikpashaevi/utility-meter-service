@@ -11,6 +11,10 @@ import alik.utilitymeter.mapper.MeterReadingMapper;
 import alik.utilitymeter.repository.MeterReadingRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,16 +41,34 @@ public class MeterReadingService {
 
     LocalDate requestDate = LocalDate.of(request.getReadingYear(), request.getReadingMonth(), 1);
 
+    MeterReading previousReading = validateReading(meterId, requestDate, request.getValue());
+
+    MeterReading reading = meterReadingMapper.toEntity(request);
+    reading.setMeter(meter);
+    reading.setSubmittedBy(currentUser.keycloakSubject());
+
+    MeterReading saved = meterReadingRepository.saveAndFlush(reading);
+
+    BigDecimal previousValue = previousReading != null ? previousReading.getValue() : BigDecimal.ZERO;
+    BigDecimal monthlyConsumption = saved.getValue().subtract(previousValue);
+
+    MeterReadingResponse response = meterReadingMapper.toResponseDto(saved);
+    response.setMonthlyConsumption(monthlyConsumption);
+    return response;
+  }
+
+  private MeterReading validateReading(UUID meterId, LocalDate requestDate, BigDecimal requestValue) {
     if (meterReadingRepository.existsByMeterIdAndReadingDate(meterId, requestDate)) {
       throw new ConflictException("A reading already exists for this year and month: "
-          + request.getReadingYear() + "-" + request.getReadingMonth());
+          + requestDate.getYear() + "-" + requestDate.getMonthValue());
     }
 
     Page<MeterReading> previousPage = meterReadingRepository.findPreviousReading(
         meterId, requestDate, PageRequest.of(0, 1));
+    MeterReading prev = null;
     if (previousPage.hasContent()) {
-      MeterReading prev = previousPage.getContent().getFirst();
-      if (prev.getValue().compareTo(request.getValue()) > 0) {
+      prev = previousPage.getContent().getFirst();
+      if (prev.getValue().compareTo(requestValue) > 0) {
         throw new BadRequestException("Reading value must be greater than or equal to the previous reading: "
             + prev.getValue() + " from " + prev.getReadingDate().getYear() + "-" + prev.getReadingDate().getMonthValue());
       }
@@ -56,24 +78,13 @@ public class MeterReadingService {
         meterId, requestDate, PageRequest.of(0, 1));
     if (nextPage.hasContent()) {
       MeterReading next = nextPage.getContent().getFirst();
-      if (next.getValue().compareTo(request.getValue()) < 0) {
+      if (next.getValue().compareTo(requestValue) < 0) {
         throw new BadRequestException("Reading value must be less than or equal to the subsequent reading: "
             + next.getValue() + " from " + next.getReadingDate().getYear() + "-" + next.getReadingDate().getMonthValue());
       }
     }
 
-    MeterReading reading = meterReadingMapper.toEntity(request);
-    reading.setMeter(meter);
-    reading.setSubmittedBy(currentUser.keycloakSubject());
-
-    MeterReading saved = meterReadingRepository.saveAndFlush(reading);
-
-    BigDecimal previousValue = previousPage.hasContent() ? previousPage.getContent().getFirst().getValue() : BigDecimal.ZERO;
-    BigDecimal monthlyConsumption = saved.getValue().subtract(previousValue);
-
-    MeterReadingResponse response = meterReadingMapper.toResponseDto(saved);
-    response.setMonthlyConsumption(monthlyConsumption);
-    return response;
+    return prev;
   }
 
   @Transactional(readOnly = true)
@@ -84,17 +95,45 @@ public class MeterReadingService {
 
     Page<MeterReading> readingsPage = meterReadingRepository.findByMeterId(meterId, pageable);
 
+    if (readingsPage.isEmpty()) {
+      return Page.empty(pageable);
+    }
+
+    Map<UUID, BigDecimal> consumptions = calculateConsumptionsForPage(meterId, readingsPage);
+
     return readingsPage.map(current -> {
       MeterReadingResponse res = meterReadingMapper.toResponseDto(current);
-
-      Page<MeterReading> previousPage = meterReadingRepository.findPreviousReading(
-          meterId, current.getReadingDate(), PageRequest.of(0, 1));
-      
-      BigDecimal previousValue = previousPage.hasContent() ? previousPage.getContent().getFirst().getValue() : BigDecimal.ZERO;
-      BigDecimal consumption = current.getValue().subtract(previousValue);
-      res.setMonthlyConsumption(consumption);
-
+      res.setMonthlyConsumption(consumptions.getOrDefault(current.getId(), BigDecimal.ZERO));
       return res;
     });
+  }
+
+  private Map<UUID, BigDecimal> calculateConsumptionsForPage(UUID meterId, Page<MeterReading> readingsPage) {
+    LocalDate minDate = readingsPage.stream()
+        .map(MeterReading::getReadingDate)
+        .min(LocalDate::compareTo)
+        .orElse(LocalDate.now());
+
+    LocalDate maxDate = readingsPage.stream()
+        .map(MeterReading::getReadingDate)
+        .max(LocalDate::compareTo)
+        .orElse(LocalDate.now());
+
+    List<MeterReading> rangeReadings = meterReadingRepository.findByMeterIdAndReadingDateBetweenOrderByReadingDateAsc(meterId, minDate, maxDate);
+    Page<MeterReading> prevPage = meterReadingRepository.findPreviousReading(meterId, minDate, PageRequest.of(0, 1));
+
+    List<MeterReading> chronological = new ArrayList<>();
+    if (prevPage.hasContent()) {
+      chronological.add(prevPage.getContent().getFirst());
+    }
+    chronological.addAll(rangeReadings);
+
+    Map<UUID, BigDecimal> consumptions = new HashMap<>();
+    for (int i = 0; i < chronological.size(); i++) {
+      MeterReading current = chronological.get(i);
+      BigDecimal prevVal = (i > 0) ? chronological.get(i - 1).getValue() : BigDecimal.ZERO;
+      consumptions.put(current.getId(), current.getValue().subtract(prevVal));
+    }
+    return consumptions;
   }
 }

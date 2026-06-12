@@ -16,6 +16,8 @@ public interface MeterReadingRepository extends JpaRepository<MeterReading, UUID
 
   List<MeterReading> findByMeterIdOrderByReadingDateAsc(UUID meterId);
 
+  List<MeterReading> findByMeterIdAndReadingDateBetweenOrderByReadingDateAsc(UUID meterId, LocalDate start, LocalDate end);
+
   Page<MeterReading> findByMeterId(UUID meterId, Pageable pageable);
 
   @Query("SELECT r FROM MeterReading r WHERE r.meter.id = :meterId AND r.readingDate < :date ORDER BY r.readingDate DESC")
