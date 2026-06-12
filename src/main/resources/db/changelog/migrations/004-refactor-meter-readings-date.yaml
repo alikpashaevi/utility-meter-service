@@ -1,0 +1,33 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-refactor-meter-readings-date
+      author: antigravity
+      comment: "Refactor reading_year and reading_month into reading_date"
+      changes:
+        - sql:
+            sql: ALTER TABLE meter_readings DROP CONSTRAINT chk_reading_month_range
+        - dropUniqueConstraint:
+            tableName: meter_readings
+            constraintName: uq_readings_meter_year_month
+        - addColumn:
+            tableName: meter_readings
+            columns:
+              - column:
+                  name: reading_date
+                  type: date
+        - sql:
+            sql: UPDATE meter_readings SET reading_date = MAKE_DATE(reading_year, reading_month, 1)
+        - addNotNullConstraint:
+            tableName: meter_readings
+            columnName: reading_date
+            columnDataType: date
+        - addUniqueConstraint:
+            constraintName: uq_readings_meter_date
+            tableName: meter_readings
+            columnNames: meter_id, reading_date
+        - dropColumn:
+            tableName: meter_readings
+            columnName: reading_year
+        - dropColumn:
+            tableName: meter_readings
+            columnName: reading_month

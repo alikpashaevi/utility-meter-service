@@ -65,7 +65,7 @@ public class MeterService {
     meterRepository.saveAndFlush(meter);
   }
 
-  private Meter getMeterAndVerifyAccess(UUID meterId, UUID userId, Role role) {
+  public Meter getMeterAndVerifyAccess(UUID meterId, UUID userId, Role role) {
     Meter meter = meterRepository.findById(meterId)
         .filter(Meter::isActive)
         .orElseThrow(() -> new BadRequestException("Active meter not found for this user"));

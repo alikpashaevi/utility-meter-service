@@ -11,8 +11,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.YearMonth;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -47,16 +47,10 @@ public class MeterReading {
   private BigDecimal value;
 
   /**
-   * Year component of the reading period (e.g. 2024)
+   * Date component of the reading period (stored as the 1st of the month)
    */
-  @Column(name = "reading_year", nullable = false)
-  private int readingYear;
-
-  /**
-   * Month component of the reading period (1–12)
-   */
-  @Column(name = "reading_month", nullable = false)
-  private int readingMonth;
+  @Column(name = "reading_date", nullable = false)
+  private LocalDate readingDate;
 
   @Column(name = "note", length = 500)
   private String note;
@@ -71,14 +65,9 @@ public class MeterReading {
   @Column(name = "created_at", nullable = false, updatable = false)
   private LocalDateTime createdAt;
 
-  public YearMonth getYearMonth() {
-    return YearMonth.of(readingYear, readingMonth);
-  }
-
-  public static MeterReading forMonth(YearMonth ym) {
+  public static MeterReading forMonth(LocalDate readingDate) {
     return MeterReading.builder()
-        .readingYear(ym.getYear())
-        .readingMonth(ym.getMonthValue())
+        .readingDate(readingDate)
         .build();
   }
 }

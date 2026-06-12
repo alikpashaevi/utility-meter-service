@@ -5,3 +5,5 @@ databaseChangeLog:
       file: db/changelog/migrations/002-create-meters.yaml
   - include:
       file: db/changelog/migrations/003-create-meter-readings.yaml
+  - include:
+      file: db/changelog/migrations/004-refactor-meter-readings-date.yaml
