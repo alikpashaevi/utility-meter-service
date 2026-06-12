@@ -6,7 +6,7 @@
   "registrationAllowed": false,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
-  "accessTokenLifespan": 300,
+  "accessTokenLifespan": 3600,
   "clients": [
     {
       "clientId": "meter-service-client",
