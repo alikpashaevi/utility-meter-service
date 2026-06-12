@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -52,5 +53,17 @@ public class MeterReadingController {
     log.debug("API call to fetch readings for meter: {} by user: {}", meterId, user.id());
     Page<MeterReadingResponse> responses = meterReadingService.getReadingsForMeter(meterId, pageable, user);
     return ResponseEntity.ok(responses);
+  }
+
+  @PutMapping("/{readingId}")
+  public ResponseEntity<MeterReadingResponse> modifyReading(
+      @PathVariable("meterId") UUID meterId,
+      @PathVariable("readingId") UUID readingId,
+      @RequestBody @Valid MeterReadingRequest request,
+      @CurrentUser AuthenticatedUser user
+  ) {
+    log.debug("API call to modify reading: {} for meter: {} by user: {}", readingId, meterId, user.id());
+    MeterReadingResponse response = meterReadingService.modifyReading(meterId, readingId, request, user);
+    return ResponseEntity.ok(response);
   }
 }

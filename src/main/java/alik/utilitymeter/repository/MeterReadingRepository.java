@@ -23,8 +23,16 @@ public interface MeterReadingRepository extends JpaRepository<MeterReading, UUID
   @Query("SELECT r FROM MeterReading r WHERE r.meter.id = :meterId AND r.readingDate < :date ORDER BY r.readingDate DESC")
   Page<MeterReading> findPreviousReading(@Param("meterId") UUID meterId, @Param("date") LocalDate date, Pageable pageable);
 
+  @Query("SELECT r FROM MeterReading r WHERE r.meter.id = :meterId AND r.readingDate < :date AND r.id <> :id ORDER BY r.readingDate DESC")
+  Page<MeterReading> findPreviousReadingExcludingId(@Param("meterId") UUID meterId, @Param("date") LocalDate date, @Param("id") UUID id, Pageable pageable);
+
   @Query("SELECT r FROM MeterReading r WHERE r.meter.id = :meterId AND r.readingDate > :date ORDER BY r.readingDate ASC")
   Page<MeterReading> findNextReading(@Param("meterId") UUID meterId, @Param("date") LocalDate date, Pageable pageable);
 
+  @Query("SELECT r FROM MeterReading r WHERE r.meter.id = :meterId AND r.readingDate > :date AND r.id <> :id ORDER BY r.readingDate ASC")
+  Page<MeterReading> findNextReadingExcludingId(@Param("meterId") UUID meterId, @Param("date") LocalDate date, @Param("id") UUID id, Pageable pageable);
+
   boolean existsByMeterIdAndReadingDate(UUID meterId, LocalDate readingDate);
+
+  boolean existsByMeterIdAndReadingDateAndIdNot(UUID meterId, LocalDate readingDate, UUID id);
 }
